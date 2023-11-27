@@ -217,11 +217,11 @@ def marginal_error(
     norm_error = jnp.asarray(norm_error)
     if axis == 0:
         return jnp.sum(
-            jnp.abs(marginal + f_u**2 - target) ** norm_error[:, jnp.newaxis], axis=1
+            jnp.abs(marginal + g_v**2 - target) ** norm_error[:, jnp.newaxis], axis=1
         ) ** (1.0 / norm_error)
     else:
         return jnp.sum(
-            jnp.abs(marginal + g_v**2 - target) ** norm_error[:, jnp.newaxis], axis=1
+            jnp.abs(marginal + f_u**2 - target) ** norm_error[:, jnp.newaxis], axis=1
         ) ** (1.0 / norm_error)
 
 
