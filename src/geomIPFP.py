@@ -19,18 +19,17 @@ from typing import Optional
 
 import jax
 import jax.numpy as jnp
-
+from jax._src.typing import Array
 from ott.geometry import geometry
-from ott.geometry.pointcloud import PointCloud, _apply_kernel_xy
-
 from ott.geometry.costs import CostFn
+from ott.geometry.pointcloud import PointCloud, _apply_kernel_xy
 
 
 @jax.tree_util.register_pytree_node_class
 class DotProd(CostFn):
     """dot product distance cost function."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     def pairwise(self, x: jnp.ndarray, y: jnp.ndarray) -> float:
@@ -51,11 +50,9 @@ class PointCloudIPFP(PointCloud):
         if eps is None:
             eps = self.epsilon
 
-        def body0(carry, i: int):
+        def body0(carry: tuple[float, jnp.ndarray], i: int) -> tuple[tuple[float, jnp.ndarray], jnp.ndarray]:
             eps, scaling = carry
-            y = jax.lax.dynamic_slice(
-                self.y, (i * self.batch_size, 0), (self.batch_size, self.y.shape[1])
-            )
+            y = jax.lax.dynamic_slice(self.y, (i * self.batch_size, 0), (self.batch_size, self.y.shape[1]))
             # scaling_sub = jax.lax.dynamic_slice(
             #     scaling, (i * self.batch_size,), (self.batch_size,)
             # )
@@ -63,9 +60,7 @@ class PointCloudIPFP(PointCloud):
             if self._axis_norm is None:
                 norm_y = self._norm_y
             else:
-                norm_y = jax.lax.dynamic_slice(
-                    self._norm_y, (i * self.batch_size,), (self.batch_size,)
-                )
+                norm_y = jax.lax.dynamic_slice(self._norm_y, (i * self.batch_size,), (self.batch_size,))
             h = app(
                 self.x,
                 y,
@@ -78,11 +73,9 @@ class PointCloudIPFP(PointCloud):
             )
             return carry, h
 
-        def body1(carry, i: int):
+        def body1(carry: tuple[float, jnp.ndarray], i: int) -> tuple[tuple[float, jnp.ndarray], jnp.ndarray]:
             eps, scaling = carry
-            x = jax.lax.dynamic_slice(
-                self.x, (i * self.batch_size, 0), (self.batch_size, self.x.shape[1])
-            )
+            x = jax.lax.dynamic_slice(self.x, (i * self.batch_size, 0), (self.batch_size, self.x.shape[1]))
             # scaling_sub = jax.lax.dynamic_slice(
             #     scaling, (i * self.batch_size,), (self.batch_size,)
             # )
@@ -90,9 +83,7 @@ class PointCloudIPFP(PointCloud):
             if self._axis_norm is None:
                 norm_x = self._norm_x
             else:
-                norm_x = jax.lax.dynamic_slice(
-                    self._norm_x, (i * self.batch_size,), (self.batch_size,)
-                )
+                norm_x = jax.lax.dynamic_slice(self._norm_x, (i * self.batch_size,), (self.batch_size,))
             h = app(
                 self.y,
                 x,
@@ -105,7 +96,7 @@ class PointCloudIPFP(PointCloud):
             )
             return carry, h
 
-        def finalize(i: int):
+        def finalize(i: int) -> Array:
             if axis == 0:
                 norm_y = self._norm_y if self._axis_norm is None else self._norm_y[i:]
                 return app(
@@ -215,4 +206,5 @@ class GeometryIPFP(geometry.Geometry):
 
         eps = self._epsilon.at(iteration)
         app_kernel = self.apply_kernel(scaling, eps, axis=axis) / 2.0  # S
+        # jax.debug.print("sqrt(S^2+m) = {x}", x=jnp.sqrt(app_kernel**2 + marginal))
         return jnp.sqrt(app_kernel**2 + marginal) - app_kernel

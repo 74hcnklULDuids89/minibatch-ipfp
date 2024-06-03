@@ -1,9 +1,10 @@
+import itertools
 import os
 import subprocess
 import time
-import pandas as pd
-import itertools
+
 import matplotlib.pyplot as plt
+import pandas as pd
 
 SAVE_DIR = "exp_minibatch"
 TIME_OUT = 100000  # sec
@@ -12,14 +13,13 @@ LOG_FILENAME = "exp.csv"
 
 if __name__ == "__main__":
     problem_sets = [
-        {"size": 100, "batch_size": [1, 10, 100]},
-        {"size": 1000, "batch_size": [1, 10, 100]},
-        {"size": 10000, "batch_size": [1, 10, 100]},
-        {"size": 100000, "batch_size": [1, 10, 100]},
-        {"size": 1000000, "batch_size": [1, 10, 100]},
+        {"size": 100, "batch_size": [100]},
+        {"size": 1000, "batch_size": [100]},
+        {"size": 10000, "batch_size": [100]},
+        {"size": 100000, "batch_size": [100]},
+        {"size": 1000000, "batch_size": [100]},
     ]
     method_settings = [
-        # {"method": "Batch IPFP", "factorize": False},
         {"method": "MiniBatch IPFP", "factorize": True},
     ]
 
@@ -67,26 +67,26 @@ if __name__ == "__main__":
     plt.style.use("ggplot")
     plt.xscale("log")
     plt.yscale("log")
-    plt.xticks(fontsize=18)
-    plt.yticks(fontsize=18)
-    plt.xlabel("Sample Size (n)", fontsize=18)
-    plt.ylabel("Execution Time per Step (s)", fontsize=18)
-    plt.title("Execution Time by Sample Size and Method", fontsize=20)
+    plt.xticks(fontsize=28)
+    plt.yticks(fontsize=28)
+    plt.xlabel("Sample Size (n)", fontsize=36)
+    plt.ylabel("Time per Step (s)", fontsize=36)
+    plt.title("Execution Time", fontsize=36)
 
     # Plot for each method and device
     for group, table in result_table.groupby(["method", "device", "batch_size"]):
+        if group[2] == 10000:
+            continue
         print(group)
         if group[0] == "Batch IPFP":
-            formatted_label = f"{group[0]} ({group[1]})".replace("(cpu)", "(CPU)").replace(
+            formatted_label = f"{group[0]} ({group[1]})".replace("(cpu)", "(CPU)").replace("(gpu)", "(GPU)")
+        else:
+            formatted_label = f"Mini-Batch ({group[1]}) size={group[2]}".replace("(cpu)", "(CPU)").replace(
                 "(gpu)", "(GPU)"
             )
-        else:
-            formatted_label = f"{group[0]} ({group[1]}) batch_size={group[2]}".replace(
-                "(cpu)", "(CPU)"
-            ).replace("(gpu)", "(GPU)")
-        plt.plot(table["size"], table["exec_time"], "o-", label=formatted_label, markersize=8)
+        plt.plot(table["size"], table["exec_time"], "o-", label=formatted_label, markersize=16)
 
-    plt.legend(fontsize=20)
+    plt.legend(fontsize=28)
     plt.grid(True, which="both", ls="--", linewidth=0.5)
     plt.tight_layout()
 
@@ -100,31 +100,31 @@ if __name__ == "__main__":
     plt.style.use("ggplot")
     plt.xscale("log")
     plt.yscale("log")
-    plt.xticks(fontsize=18)
-    plt.yticks(fontsize=18)
-    plt.xlabel("Sample Size (n)", fontsize=18)
-    plt.ylabel("Memory Usage (GB)", fontsize=18)
-    plt.title("Memory Usage by Sample Size and Method", fontsize=20)
+    plt.xticks(fontsize=28)
+    plt.yticks(fontsize=28)
+    plt.xlabel("Sample Size (n)", fontsize=36)
+    plt.ylabel("Memory Usage (MB)", fontsize=36)
+    plt.title("Memory Usage", fontsize=36)
 
     for group, table in result_table.groupby(["method", "device", "batch_size"]):
+        if group[2] == 10000:
+            continue
         print(group)
         if group[0] == "Batch IPFP":
-            formatted_label = f"{group[0]} ({group[1]})".replace("(cpu)", "(CPU)").replace(
+            formatted_label = f"{group[0]} ({group[1]})".replace("(cpu)", "(CPU)").replace("(gpu)", "(GPU)")
+        else:
+            formatted_label = f"Mini-Batch ({group[1]}) size={group[2]}".replace("(cpu)", "(CPU)").replace(
                 "(gpu)", "(GPU)"
             )
-        else:
-            formatted_label = f"{group[0]} ({group[1]}) batch_size={group[2]}".replace(
-                "(cpu)", "(CPU)"
-            ).replace("(gpu)", "(GPU)")
         plt.plot(
             table["size"],
-            table["max_mem"] / 1024 / 1024 / 1024,
+            table["max_mem"] / 1024 / 1024,
             "o-",
             label=formatted_label,
-            markersize=8,
+            markersize=16,
         )
 
-    plt.legend(fontsize=20)
+    plt.legend(fontsize=28)
     plt.grid(True, which="both", ls="--", linewidth=0.5)
     plt.tight_layout()
 

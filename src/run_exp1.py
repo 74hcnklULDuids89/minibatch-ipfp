@@ -1,19 +1,22 @@
+import itertools
 import os
 import subprocess
 import time
-import pandas as pd
-import itertools
+
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import pandas as pd
 
 SAVE_DIR = "exp1"
 TIME_OUT = 100000  # sec
 LOG_FILENAME = "exp.csv"
 
+
 if __name__ == "__main__":
     problem_sizes = [100, 1000, 10000]
     method_settings = [
         {"method": "Batch IPFP", "factorize": False},
-        {"method": "Mini-Batch IPFP", "factorize": True},
+        # {"method": "Mini-Batch IPFP", "factorize": True},
     ]
 
     # touch log file
@@ -22,7 +25,7 @@ if __name__ == "__main__":
     with open(f"logs/{SAVE_DIR}/{LOG_FILENAME}", "w") as f:
         f.write(f"method,device,size,batch_size,exec_time,max_mem\n")
 
-    for size, device, method in itertools.product(problem_sizes, ["cpu", "gpu"], method_settings):
+    for size, device, method in itertools.product(problem_sizes, ["gpu"], method_settings):
         try:
             subprocess.run(
                 [
@@ -56,30 +59,29 @@ if __name__ == "__main__":
     plt.style.use("ggplot")
     plt.xscale("log")
     plt.yscale("log")
-    plt.xticks(fontsize=18)
-    plt.yticks(fontsize=18)
-    plt.xlabel("Sample Size (n)", fontsize=18)
-    plt.ylabel("Execution Time per Step (s)", fontsize=18)
-    plt.title("Execution Time by Sample Size and Method", fontsize=20)
+    ax = plt.gca()
+    ax.xaxis.set_major_formatter(ticker.LogFormatter(base=10.0, labelOnlyBase=True))
+    plt.xticks(fontsize=28)
+    plt.yticks(fontsize=28)
+    plt.xlabel("Sample Size (n)", fontsize=36)
+    plt.ylabel("Time per Step (s)", fontsize=36)
+    plt.title("Execution Time", fontsize=36)
 
     # Plot for each method and device
     for group, table in result_table.groupby(["method", "device"]):
         print(group)
         if group[0] == "Batch IPFP" and group[1] == "cpu":
-            prefix = "(a)"
+            formatted_label = "(a) Batch (CPU)"
         elif group[0] == "Batch IPFP" and group[1] == "gpu":
-            prefix = "(b)"
+            formatted_label = "(b) Batch (GPU)"
         elif group[0] == "Mini-Batch IPFP" and group[1] == "cpu":
-            prefix = "(c)"
+            formatted_label = "(c) Mini-Batch (CPU)"
         elif group[0] == "Mini-Batch IPFP" and group[1] == "gpu":
-            prefix = "(d)"
+            formatted_label = "(d) Mini-Batch (GPU)"
 
-        formatted_label = f"{prefix} {group[0]} ({group[1]})".replace("(cpu)", "(CPU)").replace(
-            "(gpu)", "(GPU)"
-        )
-        plt.plot(table["size"], table["exec_time"], "o-", label=formatted_label, markersize=8)
+        plt.plot(table["size"], table["exec_time"], "o-", label=formatted_label, markersize=16)
 
-    plt.legend(fontsize=20)
+    plt.legend(fontsize=28)
     plt.grid(True, which="both", ls="--", linewidth=0.5)
     plt.tight_layout()
 
@@ -93,34 +95,33 @@ if __name__ == "__main__":
     plt.style.use("ggplot")
     plt.xscale("log")
     plt.yscale("log")
-    plt.xticks(fontsize=18)
-    plt.yticks(fontsize=18)
-    plt.xlabel("Sample Size (n)", fontsize=18)
-    plt.ylabel("Memory Usage (GB)", fontsize=18)
-    plt.title("Memory Usage by Sample Size and Method", fontsize=20)
+    ax = plt.gca()
+    ax.xaxis.set_major_formatter(ticker.LogFormatter(base=10.0, labelOnlyBase=True))
+    plt.xticks(fontsize=28)
+    plt.yticks(fontsize=28)
+    plt.xlabel("Sample Size (n)", fontsize=36)
+    plt.ylabel("Memory Usage (MB)", fontsize=36)
+    plt.title("Memory Usage", fontsize=36)
 
     for group, table in result_table.groupby(["method", "device"]):
         if group[0] == "Batch IPFP" and group[1] == "cpu":
-            prefix = "(a)"
+            formatted_label = "(a) Batch (CPU)"
         elif group[0] == "Batch IPFP" and group[1] == "gpu":
-            prefix = "(b)"
+            formatted_label = "(b) Batch (GPU)"
         elif group[0] == "Mini-Batch IPFP" and group[1] == "cpu":
-            prefix = "(c)"
+            formatted_label = "(c) Mini-Batch (CPU)"
         elif group[0] == "Mini-Batch IPFP" and group[1] == "gpu":
-            prefix = "(d)"
+            formatted_label = "(d) Mini-Batch (GPU)"
 
-        formatted_label = f"{prefix} {group[0]} ({group[1]})".replace("(cpu)", "(CPU)").replace(
-            "(gpu)", "(GPU)"
-        )
         plt.plot(
             table["size"],
-            table["max_mem"] / 1024 / 1024 / 1024,
+            table["max_mem"] / 1024 / 1024,
             "o-",
             label=formatted_label,
-            markersize=8,
+            markersize=16,
         )
 
-    plt.legend(fontsize=20)
+    plt.legend(fontsize=28)
     plt.grid(True, which="both", ls="--", linewidth=0.5)
     plt.tight_layout()
 

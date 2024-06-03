@@ -9,7 +9,7 @@ RUN go install github.com/google/pprof@latest
 # Install JAX with CUDA support
 RUN pip install --upgrade pip
 RUN pip install --default-timeout=1000 --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-RUN pip install -U --pre jaxlib==0.4.20+cuda12.cudnn89 -f https://storage.googleapis.com/jax-releases/jaxlib_nightly_cuda12_releases.html
+# RUN pip install -U --pre jaxlib==0.4.20 -f https://storage.googleapis.com/jax-releases/jaxlib_nightly_cuda12_releases.html
 
 # Install other Python dependencies
 COPY requirements.txt /workspace/
@@ -25,3 +25,5 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # add go to PATH
 ENV PATH $PATH:/root/go/bin
+
+RUN apt-get update && apt-get install -y git

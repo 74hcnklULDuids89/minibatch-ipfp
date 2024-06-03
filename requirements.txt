@@ -1,6 +1,12 @@
 numpy
 pandas
 matplotlib
-ott-jax
+ott-jax==0.4.6
 PyGeometry
 memory_profiler
+rich
+torch==2.3.0
+scikit-learn
+cvxpy
+tqdm
+seaborn
