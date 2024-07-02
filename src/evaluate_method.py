@@ -31,6 +31,7 @@ def evaluate_rankings(
     method: str,
     runs: int = 1000,
     Pc_sim: list[np.ndarray] | None = None,
+    preference_boost: float = 1.0,
 ) -> tuple[float, list[int]]:
     """evaluate methods by running monte carlo simulation of following steps:
     1. Candidates apply to jobs based on their preferences and examination function.
@@ -45,13 +46,15 @@ def evaluate_rankings(
         v_cand (Callable): examination function for candidates
         v_job (Callable): examination function for jobs
         runs (int, optional): monte calro simulation run times. Defaults to 1000.
+        Pc_sim (list[np.ndarray], optional): ranking policy for each candidate. Defaults to None.
+        preference_boost (float, optional): factor to boost probability of match action. Defaults to 1.0.
 
     Returns:
         tuple[float, float]: elapsed time and average matches
     """
     # clip preference matrices
-    pref_x = np.clip(pref_x, 0, 1)
-    pref_y = np.clip(pref_y, 0, 1)
+    pref_x = np.clip(pref_x * preference_boost, 0, 1)
+    pref_y = np.clip(pref_y * preference_boost, 0, 1)
 
     start_time = time.time()
     num_candidates, num_employers = pref_x.shape

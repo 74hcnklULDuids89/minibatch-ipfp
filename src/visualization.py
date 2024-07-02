@@ -111,7 +111,8 @@ def compare_expected_matches(
         "random": "Random",
         "naive": "Naive",
         "reciprocal": "Reciprocal",
-        "IPFP": "IPFP",
+        "Cross Ratio": "CR",
+        "batch-IPFP": "IPFP",
         "minibatch-IPFP": "Mini-batch",
     }
     df["Method"] = df["Method"].replace(method_replace)
@@ -183,7 +184,7 @@ def compare_expected_matches(
     plt.close(fig)
 
 
-def compare_expected_matches_realdata(df: pd.DataFrame, exam_type: str) -> None:
+def compare_expected_matches_realdata(df: pd.DataFrame, exam_type: str, dirname: str) -> None:
     """
     Compare the expected number of total matches for different methods and number of matches (n).
 
@@ -222,7 +223,15 @@ def compare_expected_matches_realdata(df: pd.DataFrame, exam_type: str) -> None:
             hue="Method",
             legend=False,
         )
-        ax.set_title(f"Libimseti dataset n = {n}", fontsize=24)
+        if dirname == "taichi":
+            datasetname = "Zhilian"
+            n_x = 1060
+            n_y = 154
+        elif dirname == "libimseti":
+            datasetname = "Libimseti"
+            n_x = 500
+            n_y = 500
+        ax.set_title(f"{datasetname} dataset; data size = ({n_x}, {n_y})", fontsize=24)
         ax.set_xlabel("")
         # method name fontsize
         ax.set_xticklabels(ax.get_xticklabels(), fontsize=18)
@@ -236,9 +245,10 @@ def compare_expected_matches_realdata(df: pd.DataFrame, exam_type: str) -> None:
 
     plt.tight_layout()
 
-    logs_dir = f"/workspace/logs/realdata_examination_{exam_type}"
+    logs_dir = f"/workspace/logs/{dirname}/realdata_examination_{exam_type}"
     if not os.path.exists(logs_dir):
         os.makedirs(logs_dir)
+    plt.show()
     plt.savefig(f"{logs_dir}/expected_matches_comparison_real.png", dpi=300, bbox_inches="tight")
     plt.savefig(f"{logs_dir}/expected_matches_comparison_real.eps", format="eps", bbox_inches="tight")
     plt.close(fig)

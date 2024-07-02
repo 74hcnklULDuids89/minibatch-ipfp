@@ -25,7 +25,7 @@ from sinkhornIPFP import IPFP
 
 # Configuration and constants
 MAX_STEPS = 100
-DIMENSION = 100
+DIMENSION = 50 * 2
 EPSILON_SCALE = 1.0
 FIXED_SEED = 42
 LOG_FILENAME = "exp.csv"
@@ -134,9 +134,10 @@ def run_simulation(
     batch_size: int | None = None,
     device: str = "cpu",
     sample_type: str = "random",
+    dimension: int = DIMENSION,
 ) -> tuple[float, SinkhornOutput]:
     """Run simulation on a specified device (CPU or GPU) and measure the execution time and memory usage."""
-    a, b, x, y = sample_points(rng, size, DIMENSION, sample_type=sample_type)
+    a, b, x, y = sample_points(rng, size, dimension=dimension, sample_type=sample_type)
 
     a = jax.device_put(a, jax.devices(device)[0])
     b = jax.device_put(b, jax.devices(device)[0])
@@ -172,7 +173,14 @@ def check_matrix(size: int, out_geo: GeometryIPFP, out_pc: PointCloudIPFP, devic
 
 
 def main(
-    method: str, size: int, device: str, factorize: bool, batch_size: int, save_dir: str, sample_type: str = "random"
+    method: str,
+    size: int,
+    device: str,
+    factorize: bool,
+    batch_size: int,
+    save_dir: str,
+    sample_type: str = "random",
+    dimension: int = DIMENSION,
 ) -> None:
     """Run single experiment with specified parameters.
 
@@ -202,6 +210,7 @@ def main(
         batch_size=batch_size_min,
         device=device,
         sample_type=sample_type,
+        dimension=dimension,
     )
     print(f"Calculation Time ({device.upper()}):", time_)
 
@@ -212,7 +221,7 @@ def main(
 
     # write execution time and memory usage to csv file last line
     with open(f"logs/{save_dir}/{LOG_FILENAME}", "a") as f:
-        f.write(f"{method},{device},{size},{batch_size_min},{time_ / MAX_STEPS},{max_mem}\n")
+        f.write(f"{method},{device},{size},{batch_size_min},{time_ / MAX_STEPS},{max_mem},{dimension}\n")
 
     # save result.erros to csv file
     with open(f"logs/{save_dir}/error_{device}_{size}_{factorize}.csv", "w") as f:
@@ -271,10 +280,20 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, required=True)
     parser.add_argument("--save_dir", type=str, required=True)
     parser.add_argument("--sample_type", type=str, default="random")
+    parser.add_argument("--dimension", type=int, default=DIMENSION)
     args = parser.parse_args()
     print(args)
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
     if not os.path.exists(args.save_dir + "/profile"):
         os.makedirs(f"{args.save_dir}/profile")
-    main(args.method, args.size, args.device, args.factorize, args.batch_size, args.save_dir, args.sample_type)
+    main(
+        args.method,
+        args.size,
+        args.device,
+        args.factorize,
+        args.batch_size,
+        args.save_dir,
+        args.sample_type,
+        args.dimension,
+    )
