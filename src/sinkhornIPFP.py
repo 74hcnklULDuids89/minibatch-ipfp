@@ -15,35 +15,21 @@
 # This source code is modified from the original source code.
 # See https://github.com/ott-jax/ott/blob/main/src/ott/solvers/linear/sinkhorn.py for the original source code.
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Literal,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
 import jax
 import jax.experimental
 import jax.numpy as jnp
-import jax.scipy as jsp
 import numpy as np
-
+from jax._src.typing import Array
 from ott import utils
 from ott.geometry import geometry
 from ott.initializers.linear import initializers as init_lib
 from ott.math import fixed_point_loop
 from ott.math import unbalanced_functions as uf
 from ott.math import utils as mu
-from ott.problems.linear import linear_problem, potentials
-from ott.solvers.linear import acceleration
-from ott.solvers.linear import implicit_differentiation as implicit_lib
-from ott.solvers.linear.sinkhorn import Sinkhorn, SinkhornState, SinkhornOutput, solve
+from ott.problems.linear import linear_problem
+from ott.solvers.linear.sinkhorn import Sinkhorn, SinkhornOutput, SinkhornState
 
 # if TYPE_CHECKING:
 #     from ott.solvers.linear.sinkhorn_lr import LRISinkhornOutput
@@ -88,9 +74,7 @@ class IPFPState(NamedTuple):
             parallel_dual_updates=parallel_dual_updates,
         )
 
-    def compute_kl_reg_cost(  # noqa: D102
-        self, ot_prob: linear_problem.LinearProblem, lse_mode: bool
-    ) -> float:
+    def compute_kl_reg_cost(self, ot_prob: linear_problem.LinearProblem, lse_mode: bool) -> float:  # noqa: D102
         return compute_kl_reg_cost(self.fu, self.gv, ot_prob, lse_mode)
 
     def recenter(
@@ -127,9 +111,7 @@ class IPFPState(NamedTuple):
         rho_b = uf.rho(ot_prob.epsilon, ot_prob.tau_b)
         tau = rho_a * rho_b / (rho_a + rho_b)
 
-        shift = tau * (
-            mu.logsumexp(-f / rho_a, b=ot_prob.a) - mu.logsumexp(-g / rho_b, b=ot_prob.b)
-        )
+        shift = tau * (mu.logsumexp(-f / rho_a, b=ot_prob.a) - mu.logsumexp(-g / rho_b, b=ot_prob.b))
         return f + shift, g - shift
 
 
@@ -216,18 +198,12 @@ def marginal_error(
         marginal = geom.marginal_from_scalings(f_u, g_v, axis=axis)
     norm_error = jnp.asarray(norm_error)
     if axis == 0:
-        return jnp.sum(
-            jnp.abs(marginal + g_v**2 - target) ** norm_error[:, jnp.newaxis], axis=1
-        ) ** (1.0 / norm_error)
+        return jnp.sum(jnp.abs(marginal + g_v**2 - target) ** norm_error[:, jnp.newaxis], axis=1) ** (1.0 / norm_error)
     else:
-        return jnp.sum(
-            jnp.abs(marginal + f_u**2 - target) ** norm_error[:, jnp.newaxis], axis=1
-        ) ** (1.0 / norm_error)
+        return jnp.sum(jnp.abs(marginal + f_u**2 - target) ** norm_error[:, jnp.newaxis], axis=1) ** (1.0 / norm_error)
 
 
-def compute_kl_reg_cost(
-    f: jnp.ndarray, g: jnp.ndarray, ot_prob: linear_problem.LinearProblem, lse_mode: bool
-) -> float:
+def compute_kl_reg_cost(f: jnp.ndarray, g: jnp.ndarray, ot_prob: linear_problem.LinearProblem, lse_mode: bool) -> float:
     r"""Compute objective of IPFP for OT problem given dual solutions.
 
     The objective is evaluated for dual solution ``f`` and ``g``, using
@@ -285,7 +261,7 @@ class IPFP(Sinkhorn):
         self,
         ot_prob: linear_problem.LinearProblem,
         init: Tuple[Optional[jnp.ndarray], Optional[jnp.ndarray]] = (None, None),
-        rng: Optional[jax.random.PRNGKeyArray] = None,
+        rng: Optional[Array] = None,
     ) -> SinkhornOutput:
         """Run IPFP algorithm.
 
@@ -302,11 +278,10 @@ class IPFP(Sinkhorn):
         rng = utils.default_prng_key(rng)
         initializer = self.create_initializer()
         init_dual_a, init_dual_b = initializer(ot_prob, *init, lse_mode=self.lse_mode, rng=rng)
+
         return run(ot_prob, self, (init_dual_a, init_dual_b))
 
-    def lse_step(
-        self, ot_prob: linear_problem.LinearProblem, state: SinkhornState, iteration: int
-    ) -> SinkhornState:
+    def lse_step(self, ot_prob: linear_problem.LinearProblem, state: SinkhornState, iteration: int) -> SinkhornState:
         """IPFP LSE update."""
 
         def k(tau_i: float, tau_j: float) -> float:
@@ -333,9 +308,7 @@ class IPFP(Sinkhorn):
             xi12, xi21 = xi(tau_a, tau_b), xi(tau_b, tau_a)
 
         # update g potential
-        new_gv = tau_b * ot_prob.geom.update_potential(
-            old_fu, old_gv, jnp.log(ot_prob.b), iteration, axis=0
-        )
+        new_gv = tau_b * ot_prob.geom.update_potential(old_fu, old_gv, jnp.log(ot_prob.b), iteration, axis=0)
         if recenter:
             new_gv -= k22 * smin(old_fu, ot_prob.a, tau_a)
             new_gv += xi21 * smin(new_gv, ot_prob.b, tau_b)
@@ -345,9 +318,7 @@ class IPFP(Sinkhorn):
             old_gv = gv
 
         # update f potential
-        new_fu = tau_a * ot_prob.geom.update_potential(
-            old_fu, old_gv, jnp.log(ot_prob.a), iteration, axis=1
-        )
+        new_fu = tau_a * ot_prob.geom.update_potential(old_fu, old_gv, jnp.log(ot_prob.a), iteration, axis=1)
         if recenter:
             new_fu -= k11 * smin(old_gv, ot_prob.b, tau_b)
             new_fu += xi12 * smin(new_fu, ot_prob.a, tau_a)
@@ -355,20 +326,16 @@ class IPFP(Sinkhorn):
 
         return state.set(fu=fu, gv=gv)
 
-    def kernel_step(
-        self, ot_prob: linear_problem.LinearProblem, state: SinkhornState, iteration: int
-    ) -> SinkhornState:
+    def kernel_step(self, ot_prob: linear_problem.LinearProblem, state: SinkhornState, iteration: int) -> SinkhornState:
         """IPFP multiplicative update."""
         w = self.momentum.weight(state, iteration)
+
         old_gv = state.gv
-        new_gv = (
-            ot_prob.geom.update_scaling(state.fu, ot_prob.b, iteration, axis=0) ** ot_prob.tau_b
-        )
+        new_gv = ot_prob.geom.update_scaling(state.fu, ot_prob.b, iteration, axis=0) ** ot_prob.tau_b
+
         gv = self.momentum(w, state.gv, new_gv, self.lse_mode)
         new_fu = (
-            ot_prob.geom.update_scaling(
-                old_gv if self.parallel_dual_updates else gv, ot_prob.a, iteration, axis=1
-            )
+            ot_prob.geom.update_scaling(old_gv if self.parallel_dual_updates else gv, ot_prob.a, iteration, axis=1)
             ** ot_prob.tau_a
         )
         fu = self.momentum(w, state.fu, new_fu, self.lse_mode)
@@ -400,6 +367,7 @@ class IPFP(Sinkhorn):
         # When running updates in parallel (Gauss-Seidel mode), old_g_v will be
         # used to update f_u, rather than the latest g_v computed in this loop.
         # Unused otherwise.
+
         if self.anderson:
             state = self.anderson.update(state, iteration, ot_prob, self.lse_mode)
 
@@ -463,18 +431,14 @@ class IPFP(Sinkhorn):
         """
         return np.ceil(self.max_iterations / self.inner_iterations).astype(int)
 
-    def init_state(
-        self, ot_prob: linear_problem.LinearProblem, init: Tuple[jnp.ndarray, jnp.ndarray]
-    ) -> SinkhornState:
+    def init_state(self, ot_prob: linear_problem.LinearProblem, init: Tuple[jnp.ndarray, jnp.ndarray]) -> SinkhornState:
         """Return the initial state of the loop."""
         fu, gv = init
         errors = -jnp.ones((self.outer_iterations, len(self.norm_error)), dtype=fu.dtype)
         state = IPFPState(errors=errors, fu=fu, gv=gv)
         return self.anderson.init_maps(ot_prob, state) if self.anderson else state
 
-    def output_from_state(
-        self, ot_prob: linear_problem.LinearProblem, state: SinkhornState
-    ) -> SinkhornOutput:
+    def output_from_state(self, ot_prob: linear_problem.LinearProblem, state: SinkhornState) -> SinkhornOutput:
         """Create an output from a loop state.
 
         Note:
@@ -523,11 +487,11 @@ class IPFP(Sinkhorn):
         )[0]
 
         return SinkhornOutput(
-            f=f,
-            g=g,
+            (f, g),
             errors=state.errors[:, 0],
             threshold=jnp.array(self.threshold),
             converged=converged,
+            inner_iterations=self.inner_iterations
         )
 
     @property
@@ -565,9 +529,7 @@ class IPFP(Sinkhorn):
         return cls(**aux_data, threshold=children[0])
 
 
-def run(
-    ot_prob: linear_problem.LinearProblem, solver: IPFP, init: Tuple[jnp.ndarray, ...]
-) -> SinkhornOutput:
+def run(ot_prob: linear_problem.LinearProblem, solver: IPFP, init: Tuple[jnp.ndarray, ...]) -> SinkhornOutput:
     """Run loop of the solver, outputting a state upgraded to an output."""
     iter_fun = _iterations_implicit if solver.implicit_diff else iterations
     out = iter_fun(ot_prob, solver, init)
@@ -577,14 +539,10 @@ def run(
     return out.set(ot_prob=ot_prob)
 
 
-def iterations(
-    ot_prob: linear_problem.LinearProblem, solver: IPFP, init: Tuple[jnp.ndarray, ...]
-) -> SinkhornOutput:
+def iterations(ot_prob: linear_problem.LinearProblem, solver: IPFP, init: Tuple[jnp.ndarray, ...]) -> SinkhornOutput:
     """Jittable IPFP loop. args contain initialization variables."""
 
-    def cond_fn(
-        iteration: int, const: Tuple[linear_problem.LinearProblem, IPFP], state: SinkhornState
-    ) -> bool:
+    def cond_fn(iteration: int, const: Tuple[linear_problem.LinearProblem, IPFP], state: SinkhornState) -> bool:
         _, solver = const
         return solver._continue(state, iteration)
 

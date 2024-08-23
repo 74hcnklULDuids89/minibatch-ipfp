@@ -29,6 +29,7 @@ The following source codes are modified from original sources:
     ```bash
     docker build --no-cache -t tu-matching-gpu .
     ```
+    or if you use vscode you can build image using vscode devcontainer.
 
 3. Run the container utilizing your GPU (ensure your Docker setup supports `--gpus` flag):
     ```bash
@@ -46,6 +47,34 @@ The following source codes are modified from original sources:
 
 
 5. After running, view the generated plots to compare different IPFP methods. The plots will be stored in the mounted volume (specified by `-v` in the `docker run` command), and you can view them on your host machine.
+
+## Commands for Experiments
+1.  Experiments on Expected Number of Matches
+    - For real data experiments the libmseti datasets need to be downloaded and stored in `data/libmseti` directory.  
+        ```bash
+        python src/compare_method.py --use_real_data && python src/compare_method.py --use_real_data --visualize
+        ```
+        - The result plots will be in `logs/libimseti/realdata_examination_exp/` 
+    - For synthetic data experiments
+        ```bash
+        python src/compare_method.py --sizes 500 && python src/compare_method.py  
+         --sizes 500 --visualize
+        ```
+        - The result plots will be in `logs/synthetic_examination_exp/`
+
+2. Experiments on Computation Efficiency
+    - For batch-IPFP and mini-batch IPFP experiments:
+        ```bash
+        python src/run_exp1.py
+        ```
+    - For mini-batch IPFP experiments for larger datasets:
+        ```bash
+        python src/run_exp_minibatch.py
+        ```
+    - For mini-batch IPFP experiments with various dimensions of factor vectors:
+        ```bash
+        python src/run_exp_various_dims.py
+        ```
 
 ## Notes
 
