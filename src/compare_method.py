@@ -115,24 +115,24 @@ def compare_methods(
             )
             elapsed_time = 0
         elif method == "SW":
-            if size > 50:
-                print("Skipping SW method for large matrices due to performance issues")
-                continue  # Skip SW method for large matrices due to performance issues
-            reconstrcted_pref_x = factor_x_u @ factor_x_v.T
-            reconstrcted_pref_y = factor_y_u @ factor_y_v.T
-            result = run_sw_method(reconstrcted_pref_x, reconstrcted_pref_y, exam_type, exam_type)
-            _, total_matches = evaluate_rankings(
-                None,
-                pref_x,
-                pref_y,
-                v_cand,
-                v_job,
-                method=method,
-                Pc_sim=result["Pc"],
-                preference_boost=preference_boost,
-            )
-            elapsed_time = result["elapsed_time"]
-            save_data(method, size, **result)
+            # if size > 50:
+            #     print("Skipping SW method for large matrices due to performance issues")
+            #     continue  # Skip SW method for large matrices due to performance issues
+            # reconstrcted_pref_x = factor_x_u @ factor_x_v.T
+            # reconstrcted_pref_y = factor_y_u @ factor_y_v.T
+            # result = run_sw_method(reconstrcted_pref_x, reconstrcted_pref_y, exam_type, exam_type)
+            # _, total_matches = evaluate_rankings(
+            #     None,
+            #     pref_x,
+            #     pref_y,
+            #     v_cand,
+            #     v_job,
+            #     method=method,
+            #     Pc_sim=result["Pc"],
+            #     preference_boost=preference_boost,
+            # )
+            # elapsed_time = result["elapsed_time"]
+            # save_data(method, size, **result)
         else:
             # Run the IPFP methods
             reconstrcted_pref_x = factor_x_u @ factor_x_v.T

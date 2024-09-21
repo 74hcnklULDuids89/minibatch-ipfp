@@ -8,7 +8,6 @@ import jax.numpy as jnp
 import numpy as np
 from tqdm import tqdm
 
-from ipfp_method import ipfp
 from subprocess_exp import solve_ott
 
 
@@ -128,14 +127,7 @@ def run_method(
     start = time.time()
     loop_time_list = []
     print(f"running {method}")
-    if method == "IPFP-Debug":
-        # call pytorch implementation for debug
-        mu_xy, res_list, loop_time_list, u, v, residual = ipfp(pref_x, pref_y, is_torch=True)
-        elapsed_time = time.time() - start
-        mean_loop_time = np.mean(loop_time_list)
-        converged_step = len(loop_time_list)
-        print(mu_xy)
-    elif method == "batch-IPFP":
+    if method == "batch-IPFP":
         # call modified jax-ott library
         a = jnp.ones((pref_x.shape[0],), dtype=jnp.float32) * pref_y.shape[0]
         b = jnp.ones((pref_y.shape[0],), dtype=jnp.float32) * pref_x.shape[0]

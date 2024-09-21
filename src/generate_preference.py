@@ -3,6 +3,38 @@ import warnings
 
 import numpy as np
 
+def load_real_data(
+    male_data_path: str, female_data_path: str, size: int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Load real data from the specified paths"""
+    with open(male_data_path + f"_rel_{size}.pkl", "rb") as fp:
+        male_pref = pickle.load(fp)
+    with open(female_data_path + f"_rel_{size}.pkl", "rb") as fp:
+        female_pref = pickle.load(fp)
+    with open(male_data_path + "_u.pkl", "rb") as fp:
+        factor_m_u = pickle.load(fp)
+    with open(male_data_path + "_v.pkl", "rb") as fp:
+        factor_m_v = pickle.load(fp)
+    with open(female_data_path + "_u.pkl", "rb") as fp:
+        factor_f_u = pickle.load(fp)
+    with open(female_data_path + "_v.pkl", "rb") as fp:
+        factor_f_v = pickle.load(fp)
+
+    if male_pref.shape[0] < size or female_pref.shape[0] < size:
+        warnings.warn(
+            f"The number of data points in the real data is less than the specified size {size}. Using the available data."
+        )
+        size = min(male_pref.shape[0], female_pref.shape[0])
+
+    return (
+        male_pref[:size, :size],
+        female_pref[:size, :size],
+        factor_m_u[:size],
+        factor_m_v[:size],
+        factor_f_u[:size],
+        factor_f_v[:size],
+    )
+
 
 def load_real_data_Amask(
     male_data_path: str, female_data_path: str, size: int

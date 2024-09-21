@@ -28,7 +28,7 @@ if __name__ == "__main__":
         os.makedirs(f"logs/{SAVE_DIR}/profile")
 
     with open(f"logs/{SAVE_DIR}/{LOG_FILENAME}", "w") as f:
-        f.write(f"method,device,size,batch_size,exec_time,max_mem\n")
+        f.write(f"method,device,size,batch_size,exec_time,max_mem,dimension\n")
 
     for device, method in itertools.product(["gpu"], method_settings):
         for problem_set in problem_sets:

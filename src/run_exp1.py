@@ -16,14 +16,14 @@ if __name__ == "__main__":
     problem_sizes = [100, 1000, 10000]
     method_settings = [
         {"method": "Batch IPFP", "factorize": False},
-        # {"method": "Mini-Batch IPFP", "factorize": True},
+        {"method": "Mini-Batch IPFP", "factorize": True},
     ]
 
     # touch log file
     if not os.path.exists(f"logs/{SAVE_DIR}/profile"):
         os.makedirs(f"logs/{SAVE_DIR}/profile")
     with open(f"logs/{SAVE_DIR}/{LOG_FILENAME}", "w") as f:
-        f.write(f"method,device,size,batch_size,exec_time,max_mem\n")
+        f.write(f"method,device,size,batch_size,exec_time,max_mem,dimension\n")
 
     for size, device, method in itertools.product(problem_sizes, ["gpu"], method_settings):
         try:

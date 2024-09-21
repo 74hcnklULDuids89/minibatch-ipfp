@@ -145,6 +145,13 @@ def run_simulation(
     x = jax.device_put(x, jax.devices(device)[0])
     y = jax.device_put(y, jax.devices(device)[0])
 
+    if factorize == False:
+        # calculate preference matrix from factor vectors
+        pref_x = jnp.dot(x[:, :dimension // 2], y[:, :dimension // 2].T)
+        pref_y = jnp.dot(x[:, dimension // 2:], y[:, dimension // 2:].T)
+        x = pref_x
+        y = pref_y
+
     # Measure execution time and memory usage
     start_time = time.time()
     result = solve_ott(a, b, x, y, epsilon, threshold, factorize, batch_size)
